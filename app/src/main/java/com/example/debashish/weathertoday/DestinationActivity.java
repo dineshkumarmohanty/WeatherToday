@@ -2,6 +2,7 @@ package com.example.debashish.weathertoday;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.databinding.DataBindingUtil;
 import android.net.Uri;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -11,13 +12,15 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 import com.example.debashish.weathertoday.data.WeatherContract;
+import com.example.debashish.weathertoday.databinding.ActivityDestinationBinding;
 import com.example.debashish.weathertoday.utils.TempratureUtils;
 import com.example.debashish.weathertoday.utils.WeatherDateUtils;
 
 public class DestinationActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
-
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
+
+
     public static final String[] WEATHER_DETAIL_PROJECTION = {
             WeatherContract.WeatherEntry.COLUMN_DATE,
             WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
@@ -28,6 +31,8 @@ public class DestinationActivity extends AppCompatActivity implements LoaderMana
             WeatherContract.WeatherEntry.COLUMN_DEGREES,
             WeatherContract.WeatherEntry.COLUMN_WEATHER_ID
     };
+
+
     public static final int INDEX_WEATHER_DATE = 0;
     public static final int INDEX_WEATHER_MAX_TEMP = 1;
     public static final int INDEX_WEATHER_MIN_TEMP = 2;
@@ -37,44 +42,38 @@ public class DestinationActivity extends AppCompatActivity implements LoaderMana
     public static final int INDEX_WEATHER_DEGREES = 6;
     public static final int INDEX_WEATHER_CONDITION_ID = 7;
 
+
     private static final int ID_DETAIL_LOADER = 353;
+
     private String mForecastSummary;
 
-    //  COMPLETED (15) Declare a private Uri field called mUri
-    /* The URI that is used to access the chosen day's weather details */
     private Uri mUri;
 
-    private TextView mDateView;
-    private TextView mDescriptionView;
-    private TextView mHighTemperatureView;
-    private TextView mLowTemperatureView;
-    private TextView mHumidityView;
-    private TextView mWindView;
-    private TextView mPressureView;
 
-
+    private ActivityDestinationBinding mDetailBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_destination);
-        mDateView = (TextView) findViewById(R.id.date);
-        mDescriptionView = (TextView) findViewById(R.id.weather_description);
-        mHighTemperatureView = (TextView) findViewById(R.id.high_temperature);
-        mLowTemperatureView = (TextView) findViewById(R.id.low_temperature);
-        mHumidityView = (TextView) findViewById(R.id.humidity);
-        mWindView = (TextView) findViewById(R.id.wind);
-        mPressureView = (TextView) findViewById(R.id.pressure);
+
+//      COMPLETED (4) Remove the call to setContentView
+//      COMPLETED (5) Remove all the findViewById calls
+
+//      COMPLETED (6) Instantiate mDetailBinding using DataBindingUtil
+        mDetailBinding = DataBindingUtil.setContentView(this, R.layout.activity_destination);
 
         mUri = getIntent().getData();
         if (mUri == null) throw new NullPointerException("URI for DetailActivity cannot be null");
-        getSupportLoaderManager().initLoader(ID_DETAIL_LOADER, null, this);
 
+
+        getSupportLoaderManager().initLoader(ID_DETAIL_LOADER, null, this);
     }
 
+
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        switch (id) {
+    public Loader<Cursor> onCreateLoader(int loaderId, Bundle loaderArgs) {
+
+        switch (loaderId) {
 
             case ID_DETAIL_LOADER:
 
@@ -86,12 +85,14 @@ public class DestinationActivity extends AppCompatActivity implements LoaderMana
                         null);
 
             default:
-                throw new RuntimeException("Loader Not Implemented: " + id);
+                throw new RuntimeException("Loader Not Implemented: " + loaderId);
         }
     }
 
+
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
 
         boolean cursorHasValidData = false;
         if (data != null && data.moveToFirst()) {
@@ -99,45 +100,96 @@ public class DestinationActivity extends AppCompatActivity implements LoaderMana
         }
 
         if (!cursorHasValidData) {
-
             return;
         }
 
+        int weatherId = data.getInt(INDEX_WEATHER_CONDITION_ID);
+        int weatherImageId = TempratureUtils.getLargeArtResourceIdForWeatherCondition(weatherId);
+
+        mDetailBinding.primaryInfo.weatherIcon.setImageResource(weatherImageId);
         long localDateMidnightGmt = data.getLong(INDEX_WEATHER_DATE);
         String dateText = WeatherDateUtils.getFriendlyDateString(this, localDateMidnightGmt, true);
 
-        mDateView.setText(dateText);
-        int weatherId = data.getInt(INDEX_WEATHER_CONDITION_ID);
+
+        mDetailBinding.primaryInfo.date.setText(dateText);
+
         String description = TempratureUtils.getStringForWeatherCondition(this, weatherId);
-        mDescriptionView.setText(description);
+
+
+        String descriptionA11y = getString(R.string.a11y_forecast, description);
+
+
+        mDetailBinding.primaryInfo.weatherDescription.setText(description);
+        mDetailBinding.primaryInfo.weatherDescription.setContentDescription(descriptionA11y);
+        mDetailBinding.primaryInfo.weatherIcon.setContentDescription(descriptionA11y);
+
         double highInCelsius = data.getDouble(INDEX_WEATHER_MAX_TEMP);
 
         String highString = TempratureUtils.formatTemperature(this, highInCelsius);
-        mHighTemperatureView.setText(highString);
+
+
+        String highA11y = getString(R.string.a11y_high_temp, highString);
+
+        mDetailBinding.primaryInfo.highTemperature.setText(highString);
+        mDetailBinding.primaryInfo.highTemperature.setContentDescription(highA11y);
+
 
         double lowInCelsius = data.getDouble(INDEX_WEATHER_MIN_TEMP);
-        String lowString = TempratureUtils.formatTemperature(this, lowInCelsius);
 
-        mLowTemperatureView.setText(lowString);
+        String lowString = TempratureUtils.formatTemperature(this, lowInCelsius);
+        String lowA11y = getString(R.string.a11y_low_temp, lowString);
+
+
+        mDetailBinding.primaryInfo.lowTemperature.setText(lowString);
+        mDetailBinding.primaryInfo.lowTemperature.setContentDescription(lowA11y);
+
+
         float humidity = data.getFloat(INDEX_WEATHER_HUMIDITY);
         String humidityString = getString(R.string.format_humidity, humidity);
-        mHumidityView.setText(humidityString);
+
+
+        String humidityA11y = getString(R.string.a11y_humidity, humidityString);
+
+        mDetailBinding.extraDetails.humidity.setText(humidityString);
+        mDetailBinding.extraDetails.humidity.setContentDescription(humidityA11y);
+        mDetailBinding.extraDetails.humidityLabel.setContentDescription(humidityA11y);
+
 
         float windSpeed = data.getFloat(INDEX_WEATHER_WIND_SPEED);
         float windDirection = data.getFloat(INDEX_WEATHER_DEGREES);
         String windString = TempratureUtils.getFormattedWind(this, windSpeed, windDirection);
 
-        mWindView.setText(windString);
+
+        String windA11y = getString(R.string.a11y_wind, windString);
+
+
+        mDetailBinding.extraDetails.windMeasurement.setText(windString);
+        mDetailBinding.extraDetails.windMeasurement.setContentDescription(windA11y);
+
+
+        mDetailBinding.extraDetails.windLabel.setContentDescription(windA11y);
+
         float pressure = data.getFloat(INDEX_WEATHER_PRESSURE);
+
         String pressureString = getString(R.string.format_pressure, pressure);
-        mPressureView.setText(pressureString);
+
+
+        String pressureA11y = getString(R.string.a11y_pressure, pressureString);
+
+
+        mDetailBinding.extraDetails.pressure.setText(pressureString);
+        mDetailBinding.extraDetails.pressure.setContentDescription(pressureA11y);
+
+
+        mDetailBinding.extraDetails.pressureLabel.setContentDescription(pressureA11y);
+
+
         mForecastSummary = String.format("%s - %s - %s/%s",
                 dateText, description, highString, lowString);
-
     }
+
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
     }
 }
