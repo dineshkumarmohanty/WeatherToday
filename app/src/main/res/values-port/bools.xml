@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Set so that only today layout to show  in potrait view of app -->
+    <bool name="use_today_layout">true</bool>
+
+</resources>
