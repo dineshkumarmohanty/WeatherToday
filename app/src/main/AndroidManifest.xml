@@ -20,7 +20,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DestinationActivity" />
+        <activity android:name=".DestinationActivity"
+            android:parentActivityName=".MainActivity"/>
         <activity android:name=".Setting"
             android:parentActivityName=".MainActivity"></activity>
 
